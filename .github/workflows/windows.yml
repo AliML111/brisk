@@ -34,6 +34,12 @@ jobs:
           cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:' 
           cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:' 
           architecture: x64
+
+          
+      - name: Set proper icon path
+        run: |
+          $iconPath = "${{ github.workspace }}\\assets\\icons\\logo.ico"
+          (Get-Content windows/packaging/exe/make_config.yaml) -replace 'PLACEHOLDER_ICON_PATH', $iconPath | Set-Content windows/packaging/exe/make_config.yaml
           
       - name: Install project dependencies
         run: |
@@ -43,11 +49,6 @@ jobs:
       - name: Generate intermediates
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Set proper icon path
-        run: |
-          $iconPath = "${{ github.workspace }}\\assets\\icons\\logo.ico"
-          (Get-Content windows/packaging/exe/make_config.yaml) -replace 'PLACEHOLDER_ICON_PATH', $iconPath | Set-Content windows/packaging/exe/make_config.yaml
-        
       - name: Enable windows build
         run: flutter config --enable-windows-desktop
 
