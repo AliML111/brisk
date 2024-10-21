@@ -42,16 +42,16 @@ throughout the entire download process.
 ## :art: New Default Theme
 
 To reflect the major improvements of Brisk's new release, a new default dark-mode theme has been added
-named `Celestial Dark`. The old theme is still available and can be selected (`Settings -> User Interface -> Active Theme -> Signature Blue`)
+named `Celestial Dark`. The old theme is still available and can be selected via `Settings -> User Interface -> Active Theme -> Signature Blue`
 
-## :hammer_and_wrench: Bug Fixes
+## :hammer_and_wrench: Bug Fixes and Improvements
 
 - Fixed browser-integration occasionally not working
 - Fixed failing to extract download links from a selected text area in the browser if that area contained invalid URLs.
 
 ## :pencil: Note
 
-Due to the massive breaking engine changes of this major release, the unfinished downloads of older versions of Brisk
+Due to the massive engine changes of this major release, the unfinished downloads of older versions of Brisk
 cannot be continued with the new 2.0.0 version. This version uses a different path for its database so you can delete the old `Brisk`
 directory inside your documents directory if you no longer need the older Brisk versions.
 
