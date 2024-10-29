@@ -82,7 +82,7 @@ jobs:
         run: flutter build windows
 
       - name: Build Brisk Auto Updater
-        run: flutter build windows --release
+        run: flutter build windows
         working-directory: brisk_auto_updater
 
       - name: Zip the build output
