@@ -64,7 +64,7 @@ jobs:
       - name: Copy Auto Updater to release
         run: |
           mkdir build/linux/x64/release/bundle/updater
-          cp -r brisk_auto_updater/build/linux/x64/release/bundle/ build/linux/x64/release/bundle/updater
+          cp -r brisk_auto_updater/build/linux/x64/release/bundle/* build/linux/x64/release/bundle/updater
          
       - name: Compress the release file
         run: tar -cJf Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.tar.xz -C build/linux/x64/release/bundle/ .
