@@ -1,0 +1,25 @@
+name: Extract Version
+on:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      version:
+        description: "Brisk's version from pubsec.yaml"
+        value: ${{ jobs.version.outputs.version }}
+
+jobs:
+  version:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4.1.5
+
+      - name: Extract Version from pubspec.yaml
+        id: extract_version
+        run: |
+          $VERSION = Select-String  -Path ".\pubspec.yaml" -Pattern "^\s*version:\s*(\d+\.\d+\.\d+)" -CaseSensitive | ForEach-Object{ $_.Matches.Groups[1].Value }
+          echo version=$VERSION >> $env:GITHUB_OUTPUT
+
