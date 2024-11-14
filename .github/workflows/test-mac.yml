@@ -1,0 +1,18 @@
+name: Check MacOS Runner Chip
+
+on: [workflow_dispatch]
+
+jobs:
+  check-macos-chip:
+    runs-on: macos-latest
+    steps:
+      - name: Check Architecture
+        run: |
+          echo "System architecture:"
+          uname -m
+          echo "Hardware model:"
+          sysctl hw.model
+          sw_vers
+          system_profiler SPHardwareDataType
+          networksetup -listallhardwareports
+
