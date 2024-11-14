@@ -5,6 +5,7 @@ on:
     inputs:
       version:
         required: true
+        default: ""
         type: string
 
 jobs:
