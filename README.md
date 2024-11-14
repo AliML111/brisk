@@ -1,22 +1,21 @@
 [![license](https://img.shields.io/github/license/AminBhst/brisk?style=flat-square)](https://github.com/AminBhst/brisk/blob/main/LICENSE)
 [![release](https://img.shields.io/github/v/release/AminBhst/brisk?style=flat-square)](https://github.com/AminBhst/brisk/releases)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/AminBhst/brisk/total?style=flat-square)
-<a href="https://discord.gg/g8fwgZ84"><img alt="Discord Chat" src="https://img.shields.io/discord/1298990692000989225?color=5865F2&label=discord&style=flat-square"></a>
+<a href="https://discord.gg/3mpSsVWF"><img alt="Discord Chat" src="https://img.shields.io/discord/1298990692000989225?color=5865F2&label=discord&style=flat-square"></a>
 
 <p align="center">
 <img width="100" src="assets/icons/logo.png" alt="Brisk">
-<p align="center">Ultra-fast, modern download manager for desktop</pal>
+<p align="center">Ultra-fast download manager for desktop</pal>
 </p>
 
 ## :package: Installation
 
 Installation files for Windows and Linux are available at [Github Releases](https://github.com/AminBhst/brisk/releases/).
+Brisk is also available on the [Arch AUR](https://aur.archlinux.org/packages/brisk-bin).
 
 If you encountered a "Windows Protected your PC" error, click `more info -> run anyway`
 
 For Linux, make sure to read the [Linux Prerequisites](#key-linux-prerequisites).
-
-Brisk is also available on the [Arch AUR](https://aur.archlinux.org/packages/brisk-bin)
 
 MacOS builds are unfortunately not available. If you're interested in this project and would like to contribute by providing MacOS builds for each release, please open an issue to let me know.
 
@@ -69,6 +68,13 @@ Download the Flutter SDK v2.22.0 and set the path variable
 ```bash
 flutter build macos|windows|linux
 ```
+
+## :money_with_wings: Donations
+If you find my projects useful, you can support me via:
+- ERC20: 0xcc506Cf21374B880B8eFA5294D8047C660DaD80D
+- TRC20: TDbP6HDUTtSzP1zRagEt27o5QYjB2oTFwE
+
+If you were kind enough to donate, make sure to let me know so that I can add you to the list of projects' supporters. Reasonable feature requests from supporters will also be considered top priority.
 
 ## :busts_in_silhouette: Community
 Join our [discord server](https://discord.gg/g8fwgZ84) for dedicated spaces where both developers and regular users can ask questions, get support, and connect. You'll also be notified of every upcoming update coming to Brisk.
