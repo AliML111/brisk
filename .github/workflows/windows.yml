@@ -4,26 +4,26 @@ on:
   workflow_call:
 
 jobs:
-  version:
-    runs-on: windows-latest
-    permissions:
-      contents: read
-    outputs:
-      version: ${{ steps.extract_version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4.1.5
+  # version:
+  #   runs-on: windows-latest
+  #   permissions:
+  #     contents: read
+  #   outputs:
+  #     version: ${{ steps.extract_version.outputs.version }}
+  #   steps:
+  #     - uses: actions/checkout@v4.1.5
 
-      - name: Extract Version from pubspec.yaml
-        id: extract_version
-        run: |
-          $VERSION = Select-String  -Path ".\pubspec.yaml" -Pattern "^\s*version:\s*(\d+\.\d+\.\d+)" -CaseSensitive | ForEach-Object{ $_.Matches.Groups[1].Value }
-          echo version=$VERSION >> $env:GITHUB_OUTPUT
+  #     - name: Extract Version from pubspec.yaml
+  #       id: extract_version
+  #       run: |
+  #         $VERSION = Select-String  -Path ".\pubspec.yaml" -Pattern "^\s*version:\s*(\d+\.\d+\.\d+)" -CaseSensitive | ForEach-Object{ $_.Matches.Groups[1].Value }
+  #         echo version=$VERSION >> $env:GITHUB_OUTPUT
 
   Build-windows:
     runs-on: windows-latest
     permissions:
       contents: read
-    needs: version
+    # needs: version
     steps:
       - uses: actions/checkout@v4.1.5
 
@@ -126,34 +126,34 @@ jobs:
           path: Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.zip
           retention-days: 1
 
-  Release:
-    runs-on: ubuntu-latest
-    needs: [Build-windows, version]
-    permissions:
-      contents: write
-    steps:
+  # Release:
+  #   runs-on: ubuntu-latest
+  #   needs: [Build-windows, version]
+  #   permissions:
+  #     contents: write
+  #   steps:
 
-      - name: Checkout the code
-        uses: actions/checkout@v4.1.5
+  #     - name: Checkout the code
+  #       uses: actions/checkout@v4.1.5
 
-      - name: Donwload artifact package
-        uses: actions/download-artifact@v4.1.0
-        with:
-          name: brisk-windows-exe
+  #     - name: Donwload artifact package
+  #       uses: actions/download-artifact@v4.1.0
+  #       with:
+  #         name: brisk-windows-exe
 
-      - name: Donwload artifact package
-        uses: actions/download-artifact@v4.1.0
-        with:
-          name: brisk-windows-zip
+  #     - name: Donwload artifact package
+  #       uses: actions/download-artifact@v4.1.0
+  #       with:
+  #         name: brisk-windows-zip
 
-      - name: Release the changes
-        uses: softprops/action-gh-release@v2.0.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ needs.version.outputs.version }}
-          body_path: ./.github/release.md
-          #body: ${{ inputs.Release_note }}
-          files: |
-            ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.zip
-            ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.exe
+  #     - name: Release the changes
+  #       uses: softprops/action-gh-release@v2.0.5
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: v${{ needs.version.outputs.version }}
+  #         body_path: ./.github/release.md
+  #         #body: ${{ inputs.Release_note }}
+  #         files: |
+  #           ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.zip
+  #           ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.exe
