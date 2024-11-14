@@ -90,7 +90,6 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
-    needs: version
     steps:
 
       - name: Checkout the code
