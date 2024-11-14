@@ -225,7 +225,12 @@ jobs:
       - name: Download windows package
         uses: actions/download-artifact@v4.1.0
         with:
-          name: brisk-windows
+          name: brisk-windows-zip
+
+      - name: Download windows package
+        uses: actions/download-artifact@v4.1.0
+        with:
+          name: brisk-windows-exe
 
 #      - name: Download macos package
 #        uses: actions/download-artifact@v4.1.0
@@ -243,5 +248,6 @@ jobs:
             ./Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.rpm
             ./Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.deb
             ./Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.tar.xz
-#            ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.exe
+            ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.zip
+            ./Brisk-v${{ needs.version.outputs.version }}-windows-x86_64.exe
 #            ./Brisk-${{ needs.version.outputs.version }}-macos-x64.dmg
