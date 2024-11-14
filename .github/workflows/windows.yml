@@ -10,12 +10,12 @@ on:
 
 jobs:
   version:
-    if: ${{ inputs.version }} == ""
+    if: ${{ ! inputs.version }}
     uses: ./.github/workflows/version.yml
   
 
   Build-windows-dispatch:
-    if: ${{ inputs.version }} == ""
+    if: ${{ ! inputs.version }}
     runs-on: windows-latest
     permissions:
       contents: read
@@ -124,7 +124,7 @@ jobs:
   
   Build-windows-on-call:
     runs-on: windows-latest
-    if: ${{ inputs.version }} != ""
+    if: ${{ inputs.version }}
     permissions:
       contents: read
     needs: version
@@ -233,7 +233,7 @@ jobs:
   Release:
     runs-on: ubuntu-latest
     needs: [Build-windows-dispatch, version]
-    if: ${{ inputs.version }} == ""
+    if: ${{ ! inputs.version }}
     permissions:
       contents: write
     steps:
