@@ -58,10 +58,10 @@ jobs:
         run: flutter_distributor release --name=prod
 
       - name: change the deb name
-        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.deb ./Brisk-${{ needs.version.outputs.version }}-linux-x86_64.deb
+        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.deb ./Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.deb
 
       - name: change the rpm name
-        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.rpm ./Brisk-${{ needs.version.outputs.version }}-linux-x86_64.rpm
+        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.rpm ./Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.rpm
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4.3.3
@@ -113,10 +113,10 @@ jobs:
         run: flutter_distributor release --name=prod
 
       - name: change the deb name
-        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.deb ./Brisk-${{ inputs.version }}-linux-x86_64.deb
+        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.deb ./Brisk-v${{ inputs.version }}-linux-x86_64.deb
 
       - name: change the rpm name
-        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.rpm ./Brisk-${{ inputs.version }}-linux-x86_64.rpm
+        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.rpm ./Brisk-v${{ inputs.version }}-linux-x86_64.rpm
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4.3.3
