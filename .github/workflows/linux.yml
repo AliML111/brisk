@@ -57,14 +57,11 @@ jobs:
       - name: Start the build process
         run: flutter_distributor release --name=prod
 
-      - name: move the packages
-        run: find ./dist -name brisk* -execdir mv {} ../../ \;
-
       - name: change the deb name
-        run: find ./ -name *.deb -execdir mv {} Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.deb \;
+        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.deb ./Brisk-${{ needs.version.outputs.version }}-linux-x86_64.deb
 
       - name: change the rpm name
-        run: find ./ -name *.rpm -execdir mv {} Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.rpm \;
+        run: mv dist/${{ needs.version.outputs.version }}/brisk-${{ needs.version.outputs.version }}+${{ needs.version.outputs.version }}-linux.rpm ./Brisk-${{ needs.version.outputs.version }}-linux-x86_64.rpm
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4.3.3
@@ -115,14 +112,11 @@ jobs:
       - name: Start the build process
         run: flutter_distributor release --name=prod
 
-      - name: move the packages
-        run: find ./dist -name brisk* -execdir mv {} ../../ \;
-
       - name: change the deb name
-        run: find ./ -name *.deb -execdir mv {} Brisk-v${{ inputs.version }}-linux-x86_64.deb \;
+        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.deb ./Brisk-${{ inputs.version }}-linux-x86_64.deb
 
       - name: change the rpm name
-        run: find ./ -name *.rpm -execdir mv {} Brisk-v${{ inputs.version }}-linux-x86_64.rpm \;
+        run: mv dist/${{ inputs.version }}/brisk-${{ inputs.version }}+${{ inputs.version }}-linux.rpm ./Brisk-${{ inputs.version }}-linux-x86_64.rpm
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4.3.3
@@ -145,7 +139,7 @@ jobs:
       - name: Donwload artifact package
         uses: actions/download-artifact@v4.1.0
         with:
-          name: brisk-package
+          name: brisk-linux
 
       - name: Release the changes
         uses: softprops/action-gh-release@v2.0.5
