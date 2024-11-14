@@ -33,6 +33,8 @@ jobs:
 
   Build-windows:
    uses: ./.github/workflows/windows.yml
+   needs: version
+   
     # runs-on: windows-latest
     # permissions:
     #   contents: read
