@@ -36,13 +36,16 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Print CPU model on macOS
+        run: sysctl -n machdep.cpu.brand_string
+        
       - name: Install npm dependencies
         run: npm install -g appdmg
 
       - name: Install flutter
         uses: subosito/flutter-action@v2.14.0
         with:
-          flutter-version: "3.22.0"
+          flutter-version: "3.27.1"
           channel: 'stable'
           cache: true
           cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
