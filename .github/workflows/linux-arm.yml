@@ -44,6 +44,13 @@ jobs:
           cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:' 
           architecture: x64
 
+                 
+      - name: enable arm
+        run: sudo dpkg --add-architecture arm64
+
+      - name: update
+        run: sudo apt update
+
       - name: Install required tools     
         run: |
            sudo apt-get update -y
