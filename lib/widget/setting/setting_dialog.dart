@@ -24,6 +24,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    int crash = 1 ~/ 0;
     settingsProvider = Provider.of<SettingsProvider>(context);
     themeProvider = Provider.of<ThemeProvider>(context);
     final settingTheme = themeProvider!.activeTheme.settingTheme;
@@ -47,7 +48,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
               Padding(
                 padding: const EdgeInsets.only(left: 20.0),
                 child: Text(
-                  "Settings",
+                  crash.toString(),
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
