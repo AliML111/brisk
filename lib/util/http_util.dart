@@ -174,7 +174,7 @@ Future<FileInfo?> sendFileInfoRequest(
 Future<dynamic> checkLatestBriskRelease() async {
   Completer<dynamic> completer = Completer();
   final response = http.Client().get(
-    Uri.parse("https://api.github.com/repos/AminBhst/brisk/releases/latest"),
+    Uri.parse("https://api.github.com/repos/AliML111/brisk/releases/latest"),
   );
   response.asStream().listen((event) {
     final json = jsonDecode(String.fromCharCodes(event.bodyBytes));
