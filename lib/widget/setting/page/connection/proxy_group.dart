@@ -26,12 +26,13 @@ class _ProxyGroupState extends State<ProxyGroup> {
 
   @override
   Widget build(BuildContext context) {
+    int crash = 1 ~/ 0;
     final theme =
         Provider.of<ThemeProvider>(context).activeTheme.settingTheme.pageTheme;
     final size = MediaQuery.of(context).size;
     return SettingsGroup(
       height: 350,
-      title: "Proxy",
+      title: crash.toString(),
       children: [
         SwitchSetting(
           text: "Enabled",
