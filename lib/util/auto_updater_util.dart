@@ -100,7 +100,7 @@ void handleBriskUpdateCheck(
         confirmButtonText: "Yes, Take me there",
         confirmButtonWidth: 150,
         onConfirmPressed: () => launchUrlString(
-            "https://github.com/AminBhst/brisk/releases/latest"),
+            "https://github.com/AliML111/brisk/releases/latest"),
       ),
     );
   }
@@ -114,7 +114,7 @@ Future<String> getLatestVersionChangeLog({
   bool browserExtension = false,
 }) async {
   String url =
-      "https://raw.githubusercontent.com/AminBhst/brisk/refs/heads/main/.github/${browserExtension ? "extension_release.md" : "release.md"}";
+      "https://raw.githubusercontent.com/AliML111/brisk/refs/heads/main/.github/${browserExtension ? "extension_release.md" : "release.md"}";
   final response = await Client().get(Uri.parse(url));
   final changeLog = utf8.decode(response.bodyBytes);
   if (removeChangeLogHeader) {
@@ -158,7 +158,7 @@ void launchAutoUpdater() async {
     });
   } else {
     launchUrlString(
-      "https://github.com/AminBhst/brisk/releases/latest",
+      "https://github.com/AliML111/brisk/releases/latest",
     );
   }
 }
