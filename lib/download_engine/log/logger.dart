@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Logger {
   Timer? flushTimer;
@@ -96,6 +97,19 @@ class Logger {
     );
     logBuffer.clear();
   }
+}
+
+writeLog(dynamic log) async {
+  if (log == null) return;
+  final docDir = await getApplicationDocumentsDirectory();
+  final logDir = join(docDir.path, "Brisk_Logs");
+  Directory(logDir).createSync();
+  final logFile = File(join(logDir, "brisk.log"));
+  logFile.createSync(recursive: true);
+  logFile.writeAsStringSync(
+    log.toString(),
+    mode: FileMode.writeOnlyAppend,
+  );
 }
 
 enum LogLevel { WARN, ERROR, TRACE, INFO }
