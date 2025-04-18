@@ -2,14 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:brisk/constants/download_type.dart';
 import 'package:brisk/download_engine/channel/http_download_connection_channel.dart';
 import 'package:brisk/download_engine/message/button_availability_message.dart';
 import 'package:brisk/download_engine/message/connection_handshake_message.dart';
 import 'package:brisk/download_engine/message/connection_segment_message.dart';
 import 'package:brisk/download_engine/download_command.dart';
 import 'package:brisk/download_engine/download_status.dart';
-import 'package:brisk/download_engine/channel/download_connection_channel.dart';
+import 'package:brisk/download_engine/message/connections_cleared_message.dart';
 import 'package:brisk/download_engine/message/http_download_isolate_message.dart';
 import 'package:brisk/download_engine/message/log_message.dart';
 import 'package:brisk/download_engine/segment/download_segment_tree.dart';
@@ -25,6 +24,7 @@ import 'package:brisk/download_engine/message/download_isolate_message.dart';
 import 'package:brisk/download_engine/util/temp_file_util.dart';
 import 'package:brisk/model/isolate/isolate_args.dart';
 import 'package:dartx/dartx.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:path/path.dart';
 
@@ -226,11 +226,8 @@ class HttpDownloadEngine {
       _setConnectionSpawnIgnoreList(data);
       final downloadItem = data.downloadItem;
       final id = downloadItem.id;
-      final engineChannel = _engineChannels[id]!;
       if (isAssembledFileInvalid(downloadItem)) {
-        final progress = reassembleFile(downloadItem);
-        engineChannel.sendMessage(progress);
-        return;
+        File(downloadItem.filePath).deleteSync();
       }
       _setFutureCommandExecution(data);
       await sendToDownloadIsolates(data, providerChannel);
@@ -343,6 +340,9 @@ class HttpDownloadEngine {
       case DownloadProgressMessage:
         _handleProgressUpdates(message);
         break;
+      case ConnectionsClearedMessage:
+        _handleConnectionsClearedMessage(message);
+        break;
       case ConnectionSegmentMessage:
         _handleSegmentMessage(message);
         break;
@@ -355,6 +355,18 @@ class HttpDownloadEngine {
       default:
         break;
     }
+  }
+
+  static void _handleConnectionsClearedMessage(
+    ConnectionsClearedMessage message,
+  ) {
+    final id = message.downloadItem.id;
+    _connectionIsolates[id]?.forEach((_, isolate) => isolate.kill(priority: 0));
+    _connectionIsolates[id]?.clear();
+    _engineChannels[id]?.sendMessage(message);
+    _engineChannels.remove(id);
+    _connectionProgresses.remove(id);
+    _downloadProgresses.remove(id);
   }
 
   static void _handleConnectionHandshakeMessage(ConnectionHandshake message) {
@@ -613,7 +625,10 @@ class HttpDownloadEngine {
     }
     if (isTempWriteComplete && isAssembleEligible(downloadItem)) {
       engineChannel.sendMessage(downloadProgress);
-      final success = assembleFile(progress.downloadItem);
+      final success = assembleFile(
+        progress.downloadItem,
+        progressChannel: engineChannel.channel,
+      );
 
       /// TODO add proper progress indication. currently it only notifies when the assemble is complete
       _setCompletionStatuses(success, downloadProgress);
@@ -764,12 +779,15 @@ class HttpDownloadEngine {
       validateTempFilesIntegrity(
         data.downloadItem,
         checkForMissingTempFile: false,
+        progressUpdateChannel: handlerChannel,
       );
-      final missingByteRanges = _findMissingByteRanges(
-        data.downloadItem,
-      );
+      final missingByteRanges = _findMissingByteRanges(data.downloadItem);
       if (missingByteRanges.isEmpty && isAssembleEligible(data.downloadItem)) {
-        assembleFile(data.downloadItem, notifyProgress: true);
+        assembleFile(
+          data.downloadItem,
+          progressChannel: engineChannel.channel,
+          notifyProgress: true,
+        );
         return;
       }
       missingByteRanges.forEach((element) {
@@ -832,7 +850,6 @@ class HttpDownloadEngine {
   }
 
   /// Analyzes the temp files and returns the missing temp byte ranges
-  /// TODO probably needs fixing
   static List<Segment> _findMissingByteRanges(
     DownloadItemModel downloadItem,
   ) {
@@ -859,6 +876,10 @@ class HttpDownloadEngine {
       final tempFileName = basename(tempFile.path);
       if (prevFileName == "") {
         prevFileName = tempFileName;
+        final startByte = getStartByteFromTempFileName(tempFileName);
+        if (startByte != 0) {
+          missingBytes.add(Segment(0, startByte - 1));
+        }
         continue;
       }
 
@@ -896,23 +917,28 @@ class HttpDownloadEngine {
     DownloadItemModel downloadItem, {
     bool deleteCorruptedTempFiles = true,
     bool checkForMissingTempFile = true,
+    IsolateChannel? progressUpdateChannel,
   }) {
     final logger = _engineChannels[downloadItem.id]!.logger;
-    final progress = _downloadProgresses[downloadItem.id];
+    var progress = _downloadProgresses[downloadItem.id] ??
+        DownloadProgressMessage(downloadItem: downloadItem);
     progress
-      ?..status = DownloadStatus.validatingFiles
+      ..downloadItem = downloadItem
+      ..status = DownloadStatus.validatingFiles
       ..downloadItem.status = DownloadStatus.validatingFiles;
     _engineChannels[downloadItem.id]!.sendMessage(progress);
     logger?.info("Validating temp files integrity...");
     List<File> tempFilesToDelete = [];
     final tempPath = join(downloadSettings.baseTempDir.path, downloadItem.uid);
     final tempDir = Directory(tempPath);
-    final tempFies = getTempFilesSorted(tempDir);
-    if (tempFies.isEmpty) {
+    final tempFiles = getTempFilesSorted(tempDir);
+    if (tempFiles.isEmpty) {
       return;
     }
-    for (int i = 0; i < tempFies.length; i++) {
-      final file = tempFies[i];
+    for (int i = 0; i < tempFiles.length; i++) {
+      progress.integrityValidationProgress = i / tempFiles.length;
+      progressUpdateChannel?.sink.add(progress);
+      final file = tempFiles[i];
       final end = getEndByteFromTempFile(file);
       final start = getStartByteFromTempFile(file);
       if (end - start + 1 != file.lengthSync()) {
@@ -926,22 +952,26 @@ class HttpDownloadEngine {
         );
         tempFilesToDelete.add(file);
       }
-      if (i == tempFies.length - 1) {
+      if (i == tempFiles.length - 1) {
         continue;
       }
-      final nextFile = tempFies[i + 1];
+      final nextFile = tempFiles[i + 1];
       final startNext = getStartByteFromTempFile(nextFile);
       // Cases where there is a single missing byte
       if (startNext - end == 2) {
         tempFilesToDelete.add(file);
-        tempFilesToDelete.add(tempFies[i - 1]);
+        if (i - 1 < 0) {
+          tempFilesToDelete.add(tempFiles[i + 1]);
+        } else {
+          tempFilesToDelete.add(tempFiles[i - 1]);
+        }
       }
       if (checkForMissingTempFile && startNext - 1 != end) {
         logger?.info(
           "Found inconsistent temp file :: ${basename(file.path)} == ${basename(nextFile.path)}",
         );
       }
-      final badTempFiles = tempFies.where((f) => f != file).where((f) {
+      final badTempFiles = tempFiles.where((f) => f != file).where((f) {
         final fileSegment = Segment(
           getStartByteFromTempFile(f),
           getEndByteFromTempFile(f),
@@ -970,7 +1000,12 @@ class HttpDownloadEngine {
     if (deleteCorruptedTempFiles) {
       tempFilesToDelete.toSet().forEach((file) {
         logger?.info("Deleting bad temp file ${basename(file.path)}...");
-        file.deleteSync(recursive: true);
+        try {
+          file.deleteSync();
+        } catch (e) {
+          logger?.error("Failed to delete file ${basename(file.path)}! $e");
+          rethrow;
+        }
       });
     }
   }
@@ -980,6 +1015,7 @@ class HttpDownloadEngine {
   static bool assembleFile(
     DownloadItemModel downloadItem, {
     bool notifyProgress = false,
+    required IsolateChannel progressChannel,
   }) {
     final engineChannel = _engineChannels[downloadItem.id]!;
     final progress = _downloadProgresses[downloadItem.id] ??
@@ -990,13 +1026,13 @@ class HttpDownloadEngine {
       ..downloadItem.status = DownloadStatus.assembling
       ..totalDownloadProgress = 1
       ..downloadProgress = 1
-      ..status = DownloadStatus.downloading;
+      ..status = DownloadStatus.assembling;
     engineChannel.sendMessage(progress);
     engineChannel.assembleRequested = true;
     final logger = engineChannel.logger;
     final tempPath = join(downloadSettings.baseTempDir.path, downloadItem.uid);
     final tempDir = Directory(tempPath);
-    final tempFies = getTempFilesSorted(tempDir);
+    final tempFiles = getTempFilesSorted(tempDir);
     File fileToWrite = File(downloadItem.filePath);
     if (fileToWrite.existsSync()) {
       var newFilePath = FileUtil.getFilePath(
@@ -1018,7 +1054,10 @@ class HttpDownloadEngine {
       fileToWrite.createSync(recursive: true);
     }
     logger?.info("Creating file...");
-    for (var file in tempFies) {
+    for (int i = 0; i < tempFiles.length; i++) {
+      progress.assembleProgress = i / tempFiles.length;
+      progressChannel.sink.add(progress);
+      var file = tempFiles[i];
       final bytes = file.readAsBytesSync();
       fileToWrite.writeAsBytesSync(bytes, mode: FileMode.writeOnlyAppend);
     }
@@ -1087,31 +1126,40 @@ class HttpDownloadEngine {
     if (progresses == null ||
         _tempTime + 1000 > nowMillis ||
         bytesTransferRate == 0) return;
+
     int totalBytes = 0;
     final contentLength = progresses.values.first.downloadItem.contentLength;
     for (var element in progresses.values) {
       totalBytes += element.totalReceivedBytes;
     }
+
     final remainingSec = (contentLength - totalBytes) / bytesTransferRate;
     String estimatedRemaining;
+
     final days = ((remainingSec % 31536000) / 86400).floor();
     final hours = (((remainingSec % 31536000) % 86400) / 3600).floor();
     final minutes = ((((remainingSec % 31536000) % 86400) % 3600) / 60).floor();
     final seconds = ((((remainingSec % 31536000) % 86400) % 3600) % 60).floor();
+
+    String formatUnit(int value, String unit) {
+      return '$value $unit${value == 1 ? '' : 's'}';
+    }
+
     if (days >= 1) {
-      estimatedRemaining =
-          '$days Days, $hours Hours, $minutes Minutes, $seconds Seconds';
+      estimatedRemaining = formatUnit(hours, 'Hour');
     } else if (hours >= 1) {
-      estimatedRemaining = '$hours Hours, $minutes Minutes, $seconds Seconds';
+      estimatedRemaining =
+          '${formatUnit(hours, 'Hour')}, ${formatUnit(minutes, 'Minute')}';
     } else if (minutes >= 1) {
-      estimatedRemaining = '$minutes Minutes, $seconds Seconds';
+      estimatedRemaining =
+          '${formatUnit(minutes, 'Minute')}, ${formatUnit(seconds, 'Second')}';
     } else if (remainingSec == 0) {
       estimatedRemaining = "";
     } else {
-      estimatedRemaining = '${remainingSec.toStringAsFixed(0)} Seconds';
+      estimatedRemaining = formatUnit(remainingSec.toInt(), 'Second');
     }
     _tempTime = _nowMillis;
-    completionEstimations.addAll({id: estimatedRemaining});
+    completionEstimations[id] = estimatedRemaining;
   }
 
   static void _setStatus(int id, DownloadProgressMessage downloadProgress) {
@@ -1156,7 +1204,7 @@ class HttpDownloadEngine {
       return;
     }
     final unfinishedConnections = progresses
-        .where((p) => p.connectioStatus != DownloadStatus.connectionComplete)
+        .where((p) => p.connectionStatus != DownloadStatus.connectionComplete)
         .toList();
 
     final pauseButtonEnabled = unfinishedConnections.every(
@@ -1174,11 +1222,10 @@ class HttpDownloadEngine {
   }
 
   static double _calculateTotalDownloadProgress(int id) {
-    double totalProgress = 0;
-    _connectionProgresses[id]!.values.forEach((progress) {
-      totalProgress += progress.totalDownloadProgress;
-    });
-    return totalProgress;
+    return _connectionProgresses[id]!
+        .values
+        .map((e) => e.totalDownloadProgress)
+        .reduce((first, second) => first + second);
   }
 
   /// TODO fix
@@ -1188,12 +1235,15 @@ class HttpDownloadEngine {
     final tempComplete = progresses.every(
       (progress) =>
           progress.totalConnectionWriteProgress >= 1 &&
-          progress.connectioStatus == DownloadStatus.connectionComplete,
+          progress.connectionStatus == DownloadStatus.connectionComplete,
     );
     if (!tempComplete) {
       return false;
     }
-    validateTempFilesIntegrity(downloadItem);
+    validateTempFilesIntegrity(
+      downloadItem,
+      progressUpdateChannel: _engineChannels[downloadItem.id]!.channel,
+    );
     final missingBytes = _findMissingByteRanges(downloadItem);
     logger?.info("Missing byte range check : ${missingBytes}");
     final nodes =
@@ -1259,9 +1309,13 @@ class HttpDownloadEngine {
   /// TODO should notify the progress while building the file instead of when the file has already been built
   static DownloadProgressMessage reassembleFile(
     DownloadItemModel downloadItem,
+    IsolateChannel progressChannel,
   ) {
     File(downloadItem.filePath).deleteSync();
-    final success = assembleFile(downloadItem);
+    final success = assembleFile(
+      downloadItem,
+      progressChannel: progressChannel,
+    );
     final status = success
         ? DownloadStatus.assembleComplete
         : DownloadStatus.assembleFailed;

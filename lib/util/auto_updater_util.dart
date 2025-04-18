@@ -8,7 +8,9 @@ import 'package:brisk/util/parse_util.dart';
 import 'package:brisk/widget/base/confirmation_dialog.dart';
 import 'package:brisk/widget/base/error_dialog.dart';
 import 'package:brisk/widget/base/info_dialog.dart';
+import 'package:brisk/widget/download/update_available_dialog.dart';
 import 'package:brisk/widget/other/brisk_change_log_dialog.dart';
+import 'package:dartx/dartx.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
@@ -23,31 +25,33 @@ void handleBriskUpdateCheck(
   bool showUpdateNotAvailableDialog = false,
   bool ignoreLastUpdateCheck = false,
 }) async {
-  bool isNewVersionAvailable = false;
+  Pair<bool, String> versionCheckResult;
   try {
-    isNewVersionAvailable = await isNewBriskVersionAvailable(
+    versionCheckResult = await isNewBriskVersionAvailable(
       ignoreLastUpdateCheck: ignoreLastUpdateCheck,
     );
   } catch (e) {
     showDialog(
       context: context,
       builder: (context) => ErrorDialog(
-        text: e.toString(),
-        textHeight: 20,
-        height: 60,
-        width: 430,
+        title: "Check for Update Failed",
+        description: e.toString(),
+        height: 100,
+        width: 400,
       ),
     );
     return;
   }
-  if (isNewVersionAvailable) {
+  if (versionCheckResult.first) {
+    final changeLog = await getLatestVersionChangeLog(
+      removeChangeLogHeader: true,
+    );
     showDialog(
-      barrierDismissible: false,
       context: context,
-      builder: (context) => ConfirmationDialog(
-        title:
-            "New version of Brisk is available! Do you want Brisk to automatically download and install the latest version?",
-        onConfirmPressed: launchAutoUpdater,
+      builder: (context) => UpdateAvailableDialog(
+        newVersion: versionCheckResult.second,
+        changeLog: changeLog,
+        onUpdatePressed: launchAutoUpdater,
       ),
     );
   } else {
@@ -55,7 +59,12 @@ void handleBriskUpdateCheck(
       showDialog(
         context: context,
         builder: (context) => InfoDialog(
-          title: "No new update is available yet",
+          titleIcon: Icon(
+            Icons.info,
+            color: Colors.blueAccent,
+          ),
+          titleIconBackgroundColor: Colors.black12,
+          titleText: "No new update is available yet",
         ),
       );
       return;
@@ -84,10 +93,14 @@ void handleBriskUpdateCheck(
       context: context,
       barrierDismissible: false,
       builder: (context) => ConfirmationDialog(
-        title:
-            "Failed to automatically update brisk to the latest version! Do you want to manually download the latest version?",
-        onConfirmPressed: () =>
-            launchUrlString("https://github.com/AminBhst/brisk/releases/latest"),
+        title: "Update Failed",
+        width: 500,
+        description:
+            "Failed to automatically update brisk to the latest version!\nWould you like to manually download the latest version?",
+        confirmButtonText: "Yes, Take me there",
+        confirmButtonWidth: 150,
+        onConfirmPressed: () => launchUrlString(
+            "https://github.com/AminBhst/brisk/releases/latest"),
       ),
     );
   }
@@ -96,12 +109,22 @@ void handleBriskUpdateCheck(
     ..save();
 }
 
-Future<String> getLatestVersionChangeLog() async {
-  final response = await Client().get(
-    Uri.parse(
-        "https://raw.githubusercontent.com/AminBhst/brisk/refs/heads/main/.github/release.md"),
-  );
-  return utf8.decode(response.bodyBytes);
+Future<String> getLatestVersionChangeLog({
+  bool removeChangeLogHeader = false,
+  bool browserExtension = false,
+}) async {
+  String url =
+      "https://raw.githubusercontent.com/AminBhst/brisk/refs/heads/main/.github/${browserExtension ? "extension_release.md" : "release.md"}";
+  final response = await Client().get(Uri.parse(url));
+  final changeLog = utf8.decode(response.bodyBytes);
+  if (removeChangeLogHeader) {
+    final lines = changeLog.split('\n');
+    if (lines.isNotEmpty && lines.first.contains("Change Log")) {
+      lines.removeAt(0);
+    }
+    return lines.join('\n');
+  }
+  return changeLog;
 }
 
 void launchAutoUpdater() async {

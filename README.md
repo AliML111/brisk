@@ -5,12 +5,7 @@
 [![Telegram Channel](https://img.shields.io/badge/Channel-Telegram-blue.svg?logo=telegram&style=flat-square)](https://t.me/ryedev)
 
 [//]: # (![Static Badge]&#40;https://img.shields.io/badge/Channel-Youtube-red?style=flat-square&logo=youtube&link=https%3A%2F%2Fwww.youtube.com%2F%40ryedev&#41;)
-
-
-<p align="center">
-<img width="100" src="assets/icons/logo.png" alt="Brisk">
-<p align="center">Ultra-fast, modern download manager for desktop</pal>
-</p>
+![brisk-header-new](https://github.com/user-attachments/assets/c7075873-54dd-4f60-80d6-c9f0e3f1fbde)
 
 ## :package: Installation
 
@@ -89,11 +84,6 @@ You can support my work via:
 - ERC20: 0xcc506Cf21374B880B8eFA5294D8047C660DaD80D
 - TRC20: TDbP6HDUTtSzP1zRagEt27o5QYjB2oTFwE
 
-If you were kind enough to donate, make sure to let me know so that I can add you to the list of projects' supporters. Reasonable feature requests from supporters will also be considered top priority.
-
-## :busts_in_silhouette: Community
-Join our [discord server](https://discord.gg/g8fwgZ84) for dedicated spaces where both developers and regular users can ask questions, get support, and connect. You'll also be notified of every upcoming update coming to Brisk.
-
 ## :heart: Credits and Contributors
 Contributions are welcome and appreciated.
 
@@ -101,3 +91,9 @@ Contributions are welcome and appreciated.
 - [AliML111](https://github.com/AliML111)
 - [Zorin FOSS](https://github.com/ZorinFoss)
 - [Norman Wang](https://github.com/Norman-w)
+
+
+## :busts_in_silhouette: Community
+
+  <div><a href="https://discord.gg/hGBDWNDHG3"><img src="https://discord.com/api/guilds/1298990692000989225/widget.png?style=banner2" alt="cord.nvim"/></a></div>
+

@@ -10,6 +10,7 @@ import 'package:brisk/download_engine/download_settings.dart';
 import 'package:brisk/download_engine/engine/http_download_engine.dart';
 import 'package:brisk/download_engine/engine/m3u8_download_engine.dart';
 import 'package:brisk/download_engine/message/button_availability_message.dart';
+import 'package:brisk/download_engine/message/connections_cleared_message.dart';
 import 'package:brisk/download_engine/model/download_item_model.dart';
 import 'package:brisk/download_engine/message/download_progress_message.dart';
 import 'package:brisk/model/download_item.dart';
@@ -17,7 +18,7 @@ import 'package:brisk/download_engine/message/download_isolate_message.dart';
 import 'package:brisk/model/isolate/isolate_args.dart';
 import 'package:brisk/provider/pluto_grid_check_row_provider.dart';
 import 'package:brisk/provider/pluto_grid_util.dart';
-import 'package:brisk/util/notification_util.dart';
+import 'package:brisk/util/notification_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pluto_grid/pluto_grid.dart';
@@ -56,6 +57,9 @@ class DownloadRequestProvider with ChangeNotifier {
 
   void executeDownloadCommand(int id, DownloadCommand command) async {
     DownloadProgressMessage? downloadProgress = downloads[id];
+    if (downloadProgress == null && command != DownloadCommand.start) {
+      return;
+    }
     downloadProgress ??= await _addDownloadProgress(id);
     final downloadItem = downloadProgress.downloadItem;
     if (checkDownloadCompletion(downloadItem)) return;
@@ -127,6 +131,19 @@ class DownloadRequestProvider with ChangeNotifier {
     if (message is ButtonAvailabilityMessage) {
       _handleButtonAvailabilityMessage(message);
     }
+    if (message is ConnectionsClearedMessage) {
+      _handleConnectionsClearedMessage(message);
+    }
+  }
+
+  void _handleConnectionsClearedMessage(ConnectionsClearedMessage message) {
+    final id = message.downloadItem.id;
+    downloads[id]!.downloadItem.status = DownloadStatus.paused;
+    downloads[id]!.status = DownloadStatus.paused;
+    engineIsolates[id]?.kill(priority: 0);
+    engineChannels.remove(id);
+    downloads[id]!.buttonAvailability = ButtonAvailability(false, true);
+    notifyAllListeners(downloads[id]!);
   }
 
   void _handleButtonAvailabilityMessage(ButtonAvailabilityMessage message) {
@@ -142,10 +159,14 @@ class DownloadRequestProvider with ChangeNotifier {
   void _handleDownloadProgressMessage(DownloadProgressMessage progress) {
     final id = progress.downloadItem.id;
     downloads[id] = progress;
+    if (engineChannels[id] == null) return;
     _handleNotification(progress);
     final downloadItem = progress.downloadItem;
     final dl = HiveUtil.instance.downloadItemsBox.get(downloadItem.id);
     if (dl == null) return;
+    if (progress.status == DownloadStatus.assembling) {
+      progress.totalDownloadProgress = 1;
+    }
     if (progress.assembleProgress == 1) {
       HiveUtil.instance.removeDownloadFromQueues(dl.key);
       PlutoGridUtil.removeCachedRow(id);
@@ -160,15 +181,15 @@ class DownloadRequestProvider with ChangeNotifier {
   void _handleNotification(DownloadProgressMessage progress) {
     if (progress.assembleProgress == 1 &&
         SettingsCache.notificationOnDownloadCompletion) {
-      NotificationUtil.showNotification(
-        NotificationUtil.downloadCompletionHeader,
+      NotificationManager.showNotification(
+        NotificationManager.downloadCompletionHeader,
         progress.downloadItem.fileName,
       );
     }
     if (progress.status == DownloadStatus.failed &&
         SettingsCache.notificationOnDownloadFailure) {
-      NotificationUtil.showNotification(
-        NotificationUtil.downloadFailureHeader,
+      NotificationManager.showNotification(
+        NotificationManager.downloadFailureHeader,
         progress.downloadItem.fileName,
       );
     }

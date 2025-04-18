@@ -4,13 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ConfirmationDialog extends StatelessWidget {
-  final VoidCallback onConfirmPressed;
   final String title;
+  final String description;
+  final VoidCallback onConfirmPressed;
+  final double confirmButtonWidth;
+  final String confirmButtonText;
+  final double width;
 
   const ConfirmationDialog({
     super.key,
-    required this.onConfirmPressed,
     required this.title,
+    required this.description,
+    required this.onConfirmPressed,
+    required this.confirmButtonWidth,
+    required this.confirmButtonText,
+    this.width = 400,
   });
 
   @override
@@ -18,30 +26,60 @@ class ConfirmationDialog extends StatelessWidget {
     final theme =
         Provider.of<ThemeProvider>(context).activeTheme.alertDialogTheme;
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
       backgroundColor: theme.backgroundColor,
+      title: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Color.fromRGBO(245, 158, 11, 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Align(
+                alignment: const Alignment(0, -0.16),
+                child: const Icon(
+                  Icons.warning_rounded,
+                  color: Color.fromRGBO(245, 158, 11, 1),
+                  size: 35,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Text(
+            title,
+            style: TextStyle(
+                color: theme.textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 20),
+          ),
+        ],
+      ),
       content: Container(
+        width: width,
         child: Text(
-          title,
+          description,
           style: const TextStyle(fontSize: 17),
         ),
       ),
       actions: [
-        RoundedOutlinedButton(
-          text: "No",
-          borderColor: theme.cancelButtonColor.borderColor,
-          hoverTextColor: theme.cancelButtonColor.hoverTextColor,
-          hoverBackgroundColor: theme.cancelButtonColor.hoverBackgroundColor,
-          textColor: theme.cancelButtonColor.textColor,
+        RoundedOutlinedButton.fromButtonColor(
+          theme.deleteCancelColor,
+          text: "Cancel",
+          width: 80,
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        RoundedOutlinedButton(
-          text: "Yes",
-          borderColor: theme.addButtonColor.borderColor,
-          hoverTextColor: theme.addButtonColor.hoverTextColor,
-          hoverBackgroundColor: theme.addButtonColor.hoverBackgroundColor,
-          textColor: theme.addButtonColor.textColor,
+        RoundedOutlinedButton.fromButtonColor(
+          theme.addButtonColor,
+          text: confirmButtonText,
+          width: confirmButtonWidth,
           onPressed: () {
             Navigator.of(context).pop();
             onConfirmPressed();

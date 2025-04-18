@@ -56,7 +56,7 @@ class _RuleEditorWindowState<T extends FileRule>
     final size = MediaQuery.of(context).size;
     return ClosableWindow(
       width: 500,
-      height: size.height > 750 ? 650 : size.height * 0.8,
+      height: size.height > 750 ? 600 : size.height * 0.75,
       backgroundColor: theme.alertDialogTheme.backgroundColor,
       content: SizedBox(
         child: Column(
@@ -101,31 +101,19 @@ class _RuleEditorWindowState<T extends FileRule>
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                RoundedOutlinedButton(
+                RoundedOutlinedButton.fromButtonColor(
+                  theme.alertDialogTheme.cancelButtonColor,
                   onPressed: () => Navigator.of(context).pop(),
-                  borderColor:
-                      theme.alertDialogTheme.cancelButtonColor.borderColor,
-                  hoverTextColor:
-                      theme.alertDialogTheme.cancelButtonColor.hoverTextColor,
-                  hoverBackgroundColor: theme
-                      .alertDialogTheme.cancelButtonColor.hoverBackgroundColor,
-                  textColor: theme.alertDialogTheme.cancelButtonColor.textColor,
                   width: 95,
                   text: "Cancel",
                 ),
                 const SizedBox(width: 30),
-                RoundedOutlinedButton(
+                RoundedOutlinedButton.fromButtonColor(
+                  theme.alertDialogTheme.addButtonColor,
                   onPressed: () {
                     widget.onSavePressed(widget.rules);
                     Navigator.of(context).pop();
                   },
-                  borderColor:
-                      theme.alertDialogTheme.addButtonColor.borderColor,
-                  hoverTextColor:
-                      theme.alertDialogTheme.addButtonColor.hoverTextColor,
-                  hoverBackgroundColor: theme
-                      .alertDialogTheme.addButtonColor.hoverBackgroundColor,
-                  textColor: theme.alertDialogTheme.addButtonColor.textColor,
                   width: 95,
                   text: "Save",
                 ),

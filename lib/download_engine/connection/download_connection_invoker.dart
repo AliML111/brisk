@@ -6,6 +6,8 @@ import 'package:brisk/download_engine/connection/m3u8_download_connection.dart';
 import 'package:brisk/download_engine/download_command.dart';
 import 'package:brisk/download_engine/connection/http_download_connection.dart';
 import 'package:brisk/download_engine/download_status.dart';
+import 'package:brisk/download_engine/message/connection_segment_message.dart';
+import 'package:brisk/download_engine/message/connections_cleared_message.dart';
 import 'package:brisk/download_engine/message/download_isolate_message.dart';
 import 'package:brisk/download_engine/message/http_download_isolate_message.dart';
 import 'package:brisk/download_engine/message/m3u8_download_isolate_message.dart';
@@ -88,6 +90,7 @@ class DownloadConnectionInvoker {
         connectionNumber: data.connectionNumber!,
         settings: data.settings,
         segment: Segment(0, 0),
+        refererHeader: data.refererHeader,
       );
     }
     return null;
@@ -98,7 +101,8 @@ class DownloadConnectionInvoker {
     StreamChannel channel,
   ) {
     final id = data.downloadItem.id;
-    if (data.command == DownloadCommand.pause) {
+    if (data.command == DownloadCommand.pause ||
+        data.command == DownloadCommand.clearConnections) {
       stopCommandTrackerMap[id] = Pair(true, channel);
       _runCommandTrackerTimer();
     } else if (data.command == DownloadCommand.start) {
@@ -208,7 +212,13 @@ class DownloadConnectionInvoker {
         connection.pause(channel.sink.add);
         break;
       case DownloadCommand.clearConnections: // TODO add sink.close()
+        _connections[id]?.forEach((_, conn) => conn.client.close());
         _connections[id]?.clear();
+        channel.sink.add(
+          ConnectionsClearedMessage(
+            downloadItem: data.downloadItem,
+          ),
+        );
         break;
       case DownloadCommand.cancel:
         connection.cancel();

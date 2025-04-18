@@ -8,15 +8,14 @@ import 'package:brisk/provider/theme_provider.dart';
 import 'package:brisk/util/file_util.dart';
 import 'package:brisk/util/responsive_util.dart';
 import 'package:brisk/widget/download/add_url_dialog.dart';
-import 'package:brisk/widget/download/download_progress_window.dart';
+import 'package:brisk/widget/download/download_info_dialog.dart';
+import 'package:brisk/widget/download/download_progress_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-
-import '../../db/hive_util.dart';
-import 'download_info_dialog.dart';
+import 'package:brisk/db/hive_util.dart';
 
 class DownloadGrid extends StatefulWidget {
   @override
@@ -62,30 +61,34 @@ class _DownloadGridState extends State<DownloadGrid> {
         renderer: (rendererContext) {
           final fileName = rendererContext.row.cells["file_name"]!.value;
           final fileType = FileUtil.detectFileType(fileName);
-          return Row(
-            children: [
-              SizedBox(
-                width: resolveIconSize(fileType),
-                height: resolveIconSize(fileType),
-                child: SvgPicture.asset(
-                  FileUtil.resolveFileTypeIconPath(fileType.name),
-                  colorFilter: ColorFilter.mode(
-                    FileUtil.resolveFileTypeIconColor(fileType.name),
-                    BlendMode.srcIn,
+          return Padding(
+            padding: const EdgeInsets.only(left: 5.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: resolveIconSize(fileType),
+                  height: resolveIconSize(fileType),
+                  child: SvgPicture.asset(
+                    FileUtil.resolveFileTypeIconPath(fileType.name),
+                    colorFilter: ColorFilter.mode(
+                      FileUtil.resolveFileTypeIconColor(fileType.name),
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  rendererContext.row.cells[rendererContext.column.field]!.value
-                      .toString(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    rendererContext
+                        .row.cells[rendererContext.column.field]!.value
+                        .toString(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -192,38 +195,18 @@ class _DownloadGridState extends State<DownloadGrid> {
           ),
           columns: columns,
           rows: [],
-          onSelected: onSelected,
+          onSelected: (event) => PlutoGridUtil.handleRowSelection(
+            event,
+            PlutoGridUtil.plutoStateManager!,
+            plutoProvider,
+          ),
           onRowChecked: (row) => plutoProvider?.notifyListeners(),
           onRowDoubleTap: onRowDoubleTap,
-          onLoaded: onLoaded,
+          onLoaded: (event) => onLoaded(event, provider!, queueProvider!),
           onRowSecondaryTap: (event) => showSecondaryTapMenu(context, event),
         ),
       ),
     );
-  }
-
-  void onSelected(event) {
-    final stateManger = PlutoGridUtil.plutoStateManager;
-    stateManger!.checkedRows.forEach((row) {
-      if (row.checkedViaSelect != null && row.checkedViaSelect!) {
-        stateManger.setRowChecked(row, false, checkedViaSelect: false);
-      }
-    });
-    if (stateManger.checkedRows.contains(event.row!)) {
-      stateManger.setRowChecked(
-        event.row!,
-        false,
-        checkedViaSelect: true,
-      );
-    } else {
-      stateManger.setRowChecked(
-        event.row!,
-        true,
-        checkedViaSelect: true,
-      );
-    }
-    stateManger.notifyListeners();
-    plutoProvider?.notifyListeners();
   }
 
   void showSecondaryTapMenu(
@@ -232,6 +215,7 @@ class _DownloadGridState extends State<DownloadGrid> {
   ) {
     final provider =
         Provider.of<DownloadRequestProvider>(context, listen: false);
+    final theme = Provider.of<ThemeProvider>(context, listen: false);
     final id = event.row.cells["id"]!.value;
     final status = event.row.cells["status"]!.value;
     final downloadProgress = provider.downloads[id];
@@ -242,7 +226,10 @@ class _DownloadGridState extends State<DownloadGrid> {
             downloadProgress.status != DownloadStatus.downloading)
         : (!downloadComplete || status == DownloadStatus.paused);
     showMenu(
-      color: const Color.fromRGBO(20, 20, 20, 1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(5),
+      ),
+      color: theme.activeTheme.rightClickMenuBackgroundColor,
       popUpAnimationStyle: AnimationStyle(
         curve: Easing.emphasizedAccelerate,
         duration: Durations.short2,
@@ -256,8 +243,8 @@ class _DownloadGridState extends State<DownloadGrid> {
       ),
       items: [
         PopupMenuItem(
-          value: "Open Progress Window",
-          child: Text("Open Progress Window"),
+          value: "Open Progress Dialog",
+          child: Text("Open Progress Dialog"),
           enabled: downloadExists,
         ),
         PopupMenuItem(
@@ -293,10 +280,10 @@ class _DownloadGridState extends State<DownloadGrid> {
       return;
     }
     switch (value) {
-      case "Open Progress Window":
+      case "Open Progress Dialog":
         showDialog(
           context: context,
-          builder: (_) => DownloadProgressWindow(downloadItem.key),
+          builder: (_) => DownloadProgressDialog(downloadItem.key),
           barrierDismissible: false,
         );
         break;
@@ -329,22 +316,30 @@ class _DownloadGridState extends State<DownloadGrid> {
     }
   }
 
-  void onLoaded(event) async {
+  void onLoaded(
+    event,
+    DownloadRequestProvider provider,
+    QueueProvider queueProvider,
+  ) async {
     PlutoGridUtil.setStateManager(event.stateManager);
     PlutoGridUtil.plutoStateManager
         ?.setSelectingMode(PlutoGridSelectingMode.row);
-    if (queueProvider!.selectedQueueId == null) {
-      provider!.fetchRows(HiveUtil.instance.downloadItemsBox.values.toList());
+    PlutoGridUtil.registerKeyListeners(
+      PlutoGridUtil.plutoStateManager!,
+      onDeletePressed: () => PlutoGridUtil.onRemovePressed(context),
+    );
+    if (queueProvider.selectedQueueId == null) {
+      provider.fetchRows(HiveUtil.instance.downloadItemsBox.values.toList());
     } else {
-      final queueId = queueProvider!.selectedQueueId!;
+      final queueId = queueProvider.selectedQueueId!;
       final queue = await HiveUtil.instance.downloadQueueBox.get(queueId);
       if (queue?.downloadItemsIds == null) return;
       final downloads = queue!.downloadItemsIds!
           .map((e) => HiveUtil.instance.downloadItemsBox.get(e)!)
           .toList();
-      provider!.fetchRows(downloads);
+      provider.fetchRows(downloads);
     }
-    PlutoGridUtil.plutoStateManager?.setFilter(PlutoGridUtil.filter);
+    PlutoGridUtil.plutoStateManager!.setFilter(PlutoGridUtil.filter);
   }
 
   void onRowDoubleTap(event) {
@@ -359,7 +354,7 @@ class _DownloadGridState extends State<DownloadGrid> {
         downloadProgress.status != DownloadStatus.assembleComplete) {
       showDialog(
         context: context,
-        builder: (_) => DownloadProgressWindow(id),
+        builder: (_) => DownloadProgressDialog(id),
         barrierDismissible: false,
       );
       return;
@@ -369,6 +364,7 @@ class _DownloadGridState extends State<DownloadGrid> {
       builder: (context) => DownloadInfoDialog(
         downloadItem,
         showActionButtons: false,
+        newDownload: false,
         showFileActionButtons:
             downloadItem.status == DownloadStatus.assembleComplete,
       ),

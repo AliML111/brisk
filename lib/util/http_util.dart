@@ -5,6 +5,7 @@ import 'package:brisk/constants/setting_options.dart';
 import 'package:brisk/model/download_item.dart';
 import 'package:brisk/setting/proxy/proxy_setting.dart';
 import 'package:brisk/util/http_client_builder.dart';
+import 'package:dartx/dartx.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -115,17 +116,16 @@ Future<FileInfo?> sendFileInfoRequest(
   bool ignoreException = false,
   bool useGet = false,
 }) async {
+  Completer<FileInfo?> completer = Completer();
   final request = http.Request(
     useGet ? "GET" : "HEAD",
     Uri.parse(downloadItem.downloadUrl),
   );
   request.headers.addAll(userAgentHeader);
   final client = HttpClientBuilder.buildClient(proxySetting);
-  var response = client.send(request);
-  Completer<FileInfo?> completer = Completer();
-
   try {
-    response
+    client
+        .send(request)
         .asStream()
         .timeout(Duration(seconds: 10))
         .listen((streamedResponse) {
@@ -163,9 +163,6 @@ Future<FileInfo?> sendFileInfoRequest(
       completer.completeError(
         Exception("Could not retrieve result from the given URL"),
       );
-      if (!ignoreException) {
-        completer.completeError(e);
-      }
     });
   } catch (e) {
     completer.completeError(e);
@@ -187,7 +184,7 @@ Future<dynamic> checkLatestBriskRelease() async {
   return completer.future;
 }
 
-Future<bool> isNewBriskVersionAvailable({
+Future<Pair<bool, String>> isNewBriskVersionAvailable({
   bool ignoreLastUpdateCheck = false,
 }) async {
   var lastUpdateCheck = HiveUtil.getSetting(SettingOptions.lastUpdateCheck);
@@ -201,13 +198,13 @@ Future<bool> isNewBriskVersionAvailable({
   }
   if (!ignoreLastUpdateCheck &&
       int.parse(lastUpdateCheck.value) + 86400000 >
-          DateTime.now().millisecondsSinceEpoch) return false;
+          DateTime.now().millisecondsSinceEpoch) return Pair(false, "");
 
   final json = await checkLatestBriskRelease();
   if (json["message"].toString().contains("rate limit")) {
     throw Exception("GitHub API rate limit exceeded. Please try again later.");
   }
-  if (json == null || json['tag_name'] == null) return false;
+  if (json == null || json['tag_name'] == null) return Pair(false, "");
 
   String tagName = json['tag_name'];
   tagName = tagName.replaceAll(".", "").replaceAll("v", "");
@@ -216,7 +213,10 @@ Future<bool> isNewBriskVersionAvailable({
   lastUpdateCheck = HiveUtil.getSetting(SettingOptions.lastUpdateCheck)!;
   lastUpdateCheck.value = DateTime.now().millisecondsSinceEpoch.toString();
   await lastUpdateCheck.save();
-  return isNewVersionAvailable(latestVersion, packageInfo.version);
+  return Pair(
+    isNewVersionAvailable(latestVersion, packageInfo.version),
+    latestVersion,
+  );
 }
 
 bool isNewVersionAvailable(String latestVersion, String targetVersion) {

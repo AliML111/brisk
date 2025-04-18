@@ -9,6 +9,8 @@ import 'package:brisk/download_engine/model/m3u8.dart';
 import 'package:brisk/model/isolate/isolate_args.dart';
 import 'package:brisk/setting/proxy/proxy_setting.dart';
 import 'package:brisk/util/settings_cache.dart';
+import 'package:brisk/widget/base/info_dialog.dart';
+import 'package:brisk/widget/download/download_info_dialog.dart';
 import 'package:dartx/dartx.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -19,10 +21,8 @@ import 'package:brisk/db/hive_util.dart';
 import 'package:brisk/model/download_item.dart';
 import 'package:brisk/model/file_metadata.dart';
 import 'package:brisk/provider/download_request_provider.dart';
-import 'package:brisk/widget/base/confirmation_dialog.dart';
 import 'package:brisk/widget/base/error_dialog.dart';
 import 'package:brisk/widget/download/ask_duplication_action.dart';
-import 'package:brisk/widget/download/download_info_dialog.dart';
 import 'file_util.dart';
 import 'http_util.dart';
 
@@ -56,10 +56,16 @@ class DownloadAdditionUiUtil {
       showDialog(
         context: context,
         builder: (_) => const ErrorDialog(
-          width: 30,
-          height: 40,
+          width: 400,
+          height: 205,
           textHeight: 15,
           title: 'Invalid URL',
+          description:
+              "The URL you've entered appears to be invalid.\nPlease check the format and try again.",
+          descriptionHint: "Make sure the URL:\n"
+              "\t • Starts with https:// or http://\n"
+              "\t • Contains a valid domain name\n"
+              "\t • Contains no invalid characters ",
         ),
       );
       return;
@@ -78,13 +84,18 @@ class DownloadAdditionUiUtil {
       }).onError(
         (e, s) {
           /// TODO Add log files
-          print(e);
           _cancelRequest(context);
           showDialog(
             context: context,
             builder: (_) => const ErrorDialog(
               textHeight: 0,
-              title: "Failed to retrieve file information!",
+              height: 200,
+              width: 380,
+              title: "Failed to retrieve file info",
+              description:
+                  "Something went wrong when trying to retrieve file information from this URL.",
+              descriptionHint:
+                  "In some cases, retrying a few times may solve the issue. Otherwise, make sure the resource you're to reach is valid.",
             ),
           );
         },
@@ -98,8 +109,10 @@ class DownloadAdditionUiUtil {
       showDialog(
         context: context,
         builder: (context) => ErrorDialog(
-          textHeight: 20,
-          text: "SAMPLE-AES encryption is not supported!",
+          height: 100,
+          width: 380,
+          title: "Unsupported Encryption",
+          description: "SAMPLE-AES encryption is not supported!",
         ),
       );
       return;
@@ -120,11 +133,16 @@ class DownloadAdditionUiUtil {
       extraInfo: {
         "duration": m3u8.totalDuration,
         "m3u8Content": m3u8.stringContent,
+        "refererHeader": m3u8.refererHeader,
       },
     );
     showDialog(
       context: context,
-      builder: (context) => DownloadInfoDialog(downloadItem),
+      builder: (context) => DownloadInfoDialog(
+        downloadItem,
+        isM3u8: true,
+        newDownload: true,
+      ),
       barrierDismissible: false,
     );
   }
@@ -179,20 +197,13 @@ class DownloadAdditionUiUtil {
         context: context,
         builder: (context) => const ErrorDialog(
           width: 400,
-          height: 60,
-          textHeight: 30,
-          text: "The given URL does not refer to the same file!",
+          height: 100,
+          title: "URL Update Error",
+          description: "The given URL does not refer to the same file!",
         ),
       );
     } else {
-      showDialog(
-        context: context,
-        builder: (context) => ConfirmationDialog(
-          onConfirmPressed: () =>
-              updateUrl(context, fileInfo.url, dl, downloadId),
-          title: "Are you sure you want to update the URL?",
-        ),
-      );
+      updateUrl(context, fileInfo.url, dl, downloadId);
     }
   }
 
@@ -205,6 +216,14 @@ class DownloadAdditionUiUtil {
     dl.downloadUrl = url;
     HiveUtil.instance.downloadItemsBox.put(dl.key, dl);
     Navigator.of(context).pop();
+    showDialog(
+      context: context,
+      builder: (context) => InfoDialog(
+        titleText: "URL updated successfully!",
+        titleIcon: Icon(Icons.done),
+        titleIconBackgroundColor: Colors.lightGreen,
+      ),
+    );
   }
 
   static Future<ReceivePort> _spawnFileInfoRetrieverIsolate(
@@ -301,7 +320,7 @@ class DownloadAdditionUiUtil {
           );
     showDialog(
       context: context,
-      builder: (_) => DownloadInfoDialog(item),
+      builder: (_) => DownloadInfoDialog(item, newDownload: true),
       barrierDismissible: false,
     );
   }

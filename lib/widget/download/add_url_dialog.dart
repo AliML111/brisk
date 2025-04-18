@@ -25,7 +25,6 @@ class _AddUrlDialogState extends State<AddUrlDialog> {
     final theme =
         Provider.of<ThemeProvider>(context).activeTheme.alertDialogTheme;
     return LoaderOverlay(
-      useDefaultLoading: false,
       overlayWidgetBuilder: (progress) => FileInfoLoader(
         onCancelPressed: () => DownloadAdditionUiUtil.cancelRequest(context),
       ),
@@ -33,6 +32,9 @@ class _AddUrlDialogState extends State<AddUrlDialog> {
         surfaceTintColor: theme.backgroundColor,
         backgroundColor: theme.backgroundColor,
         insetPadding: const EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
         title: Text(
           widget.updateDialog ? "Update Download URL" : "Add a Download URL",
           style: TextStyle(color: theme.textColor),
@@ -64,25 +66,21 @@ class _AddUrlDialogState extends State<AddUrlDialog> {
                   String url = await FlutterClipboard.paste();
                   setState(() => txtController.text = url);
                 },
-              )
+              ),
             ],
           ),
         ),
         actions: <Widget>[
-          RoundedOutlinedButton(
+          RoundedOutlinedButton.fromButtonColor(
+            theme.cancelButtonColor,
             text: "Cancel",
-            width: 95,
-            borderColor: theme.cancelButtonColor.borderColor,
-            textColor: theme.cancelButtonColor.textColor,
-            hoverTextColor: theme.cancelButtonColor.hoverTextColor,
+            width: 80,
             onPressed: () => _onCancelPressed(context),
           ),
-          RoundedOutlinedButton(
-            text: widget.updateDialog ? "Update" : "Add",
-            width: 100,
-            borderColor: theme.addButtonColor.borderColor,
-            textColor: theme.addButtonColor.textColor,
-            hoverTextColor: theme.addButtonColor.hoverTextColor,
+          RoundedOutlinedButton.fromButtonColor(
+            theme.addButtonColor,
+            text: widget.updateDialog ? "Update URL" : "Add URL",
+            width: 120,
             onPressed: () => _onAddPressed(context),
           ),
         ],
