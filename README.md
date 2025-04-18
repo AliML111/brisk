@@ -5,7 +5,8 @@
 [![Telegram Channel](https://img.shields.io/badge/Channel-Telegram-blue.svg?logo=telegram&style=flat-square)](https://t.me/ryedev)
 
 [//]: # (![Static Badge]&#40;https://img.shields.io/badge/Channel-Youtube-red?style=flat-square&logo=youtube&link=https%3A%2F%2Fwww.youtube.com%2F%40ryedev&#41;)
-![brisk-header-new](https://github.com/user-attachments/assets/c7075873-54dd-4f60-80d6-c9f0e3f1fbde)
+![brisk-header](https://github.com/user-attachments/assets/0bc0036d-1c5d-4378-8906-1ac943948fd4)
+
 
 ## :package: Installation
 
@@ -54,7 +55,8 @@ Please refer to the [brisk-browser-extension repository](https://github.com/Amin
 ## :film_projector: Demo With Browser Integration
 
 
-https://github.com/user-attachments/assets/fc63dcf4-0e69-4610-9c92-f26f12f9ad01
+https://github.com/user-attachments/assets/844c89a4-8aaa-49f0-9a4e-17fb8614bbc8
+
 
 
 
@@ -73,7 +75,7 @@ https://github.com/user-attachments/assets/fc63dcf4-0e69-4610-9c92-f26f12f9ad01
 
 ## :hammer_and_wrench: Build From Source
 
-Download the Flutter SDK v2.22.0 and set the path variable
+Install the Flutter SDK v3.29.2
 
 ```bash
 flutter build macos|windows|linux
