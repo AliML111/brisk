@@ -55,9 +55,9 @@ jobs:
         run: flutter pub get
 
       - name: Start the build process
-        run: flutter build linux
+        run: flutter build linux --release
 
-      - name: Build Brisk Auto Updater
+      - name: Build Brisk Auto Updater --release
         run: flutter build linux
         working-directory: brisk_auto_updater
 
