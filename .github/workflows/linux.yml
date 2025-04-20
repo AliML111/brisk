@@ -56,15 +56,6 @@ jobs:
 
       - name: Start the build process
         run:  flutter build linux --debug
-
-      - name: Build Brisk Auto Updater
-        run:  flutter build linux
-        working-directory: brisk_auto_updater
-
-      - name: Copy Auto Updater to Bundle
-        run: |
-           mkdir ${{ github.workspace }}/build/linux/x64/release/bundle/updater
-           cp -R ${{ github.workspace }}/brisk_auto_updater/build/linux/x64/release/bundle/* ${{ github.workspace }}/build/linux/x64/release/bundle/updater
          
       - name: Compress the release file
         run: tar -cJf Brisk-v${{ needs.version.outputs.version }}-linux-x86_64.tar.xz -C build/linux/x64/release/bundle/ .
